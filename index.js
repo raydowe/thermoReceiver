@@ -7,7 +7,7 @@ const port = 3001;
 app.use(express.static('public'))
 
 app.get('/readings', (req, res) => {
-  var readings = db.prepare('SELECT * FROM Readings').get();
+  var readings = db.prepare('SELECT * FROM Readings').all();
 	res.send(readings);
 });
 
