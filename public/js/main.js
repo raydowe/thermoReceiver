@@ -1,0 +1,113 @@
+var Readings = function() {
+
+	var ctx = this;
+
+	this.Readings = function() {
+		ctx.loadReadings();
+	}
+
+
+	this.loadReadings = function() {
+		$.ajax({
+		  url: '/readings',
+			dataType:'json'
+		})
+	  .done(function(response) {
+			ctx.organizeData(response);
+		});
+	}
+
+	this.organizeData = function(response) {
+		var datasets = [];
+
+		var downstairs = [];
+		var outside = [];
+
+		for (var i = 0; i < response.length; i++) {
+			var response_datapoint = response[i];
+			var datapoint = {};
+			datapoint.x = moment(response_datapoint.created);
+			datapoint.y = response_datapoint.temperature;
+			if (response_datapoint.sensor == 1) {
+				downstairs.push(datapoint);
+			}
+		}
+
+		ctx.makeChart(downstairs, outside);
+	}
+
+	this.makeChart = function(downstairs, outside) {
+
+		var config = {
+			type: 'line',
+		  data: {
+				datasets: [
+
+					// burndown
+					{
+						//steppedLine: true,
+						borderColor: 'rgb(255, 0, 0)',
+						data: downstairs,
+						//pointBackgroundColor: fillColors,
+						label: 'Downstairs'
+					}/*,
+
+					// ideal line
+					{
+						borderColor: 'rgb(100, 100, 100)',
+						data: ideal_data,
+						lineTension: '0',
+						label: 'Ideal'
+					}*/
+				]
+			},
+
+			options: {
+				responsive: true,
+				maintainAspectRatio:false,
+				/*legend: {
+            display: false
+       	}*/ //,
+				scales: {
+					xAxes: [{
+						gridLines: {
+							display:true,
+							color: 'rgba(255,255,255,0.2)',
+						},
+						type: 'time',
+						time: {
+							unit: 'day'
+						},
+						ticks: {
+							source: 'auto',
+							autoSkip: true
+						},
+						scaleLabel: {
+							display: true,
+							labelString: 'Date'
+						}
+					}],
+					yAxes: [{
+						gridLines: {
+							display:true,
+							color: 'rgba(255,255,255,0.2)',
+						},
+						scaleLabel: {
+							display: false,
+							labelString: 'Story Points'
+						},
+						//ticks: {
+							//beginAtZero:true
+						//}
+					}]
+				}
+			}
+		}
+
+		var canvasContext = document.getElementById('chart-canvas').getContext('2d');
+		var chart = new Chart(canvasContext, config);
+	}
+
+	ctx.Readings();
+
+}()

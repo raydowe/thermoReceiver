@@ -1,0 +1,26 @@
+<html>
+	<head>
+		<title>Temperature</title>
+		<link type="text/css" href="/css/main.css" rel="stylesheet" media="all">
+		<meta http-equiv="refresh" content="300">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+	</head>
+	<body>
+		<div class="navigation">
+			<form>
+				<input id="previous" type="button" value="Previous"/>
+				<input id="day" type="radio" name="timespan" value="day" checked/>Day
+				<input id="week" type="radio" name="timespan" value="week"/>Week
+				<input id="next" type="button" value="Next"/>
+			</form>
+		</div>
+		<div class="chart-container">
+			<canvas id="chart-canvas"></canvas>
+		</div>
+		<script src="/js/moment.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+		<script src="/js/jquery.min.js"></script>
+		<script src="/js/main.js"></script>
+	</body>
+</html>
