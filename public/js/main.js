@@ -6,7 +6,6 @@ var Readings = function() {
 		ctx.loadReadings();
 	}
 
-
 	this.loadReadings = function() {
 		$.ajax({
 		  url: '/readings',
@@ -23,11 +22,10 @@ var Readings = function() {
 		var weather = [];
 		var downstairs = [];
 
-
 		for (var i = 0; i < response.length; i++) {
 			var response_datapoint = response[i];
 			var datapoint = {};
-			datapoint.x = moment(response_datapoint.created);
+			datapoint.x = moment.utc(response_datapoint.created);
 			datapoint.y = response_datapoint.temperature;
 			if (response_datapoint.sensor == 0) {
 				weather.push(datapoint);
@@ -47,39 +45,23 @@ var Readings = function() {
 		  data: {
 				datasets: [
 
-					// weather
-					{
+					{ // downstairs
+						borderColor: 'rgb(255, 0, 0)',
+						data: downstairs,
+						label: 'Downstairs'
+					},
+
+					{ // weather
 						borderColor: 'rgb(0, 0, 255)',
 						data: weather,
 						label: 'Weather'
-					},
+					}
 
-
-					// burndown
-					{
-						//steppedLine: true,
-						borderColor: 'rgb(255, 0, 0)',
-						data: downstairs,
-						//pointBackgroundColor: fillColors,
-						label: 'Downstairs'
-					}/*,
-
-					// ideal line
-					{
-						borderColor: 'rgb(100, 100, 100)',
-						data: ideal_data,
-						lineTension: '0',
-						label: 'Ideal'
-					}*/
 				]
 			},
-
 			options: {
 				responsive: true,
 				maintainAspectRatio:false,
-				/*legend: {
-            display: false
-       	}*/ //,
 				scales: {
 					xAxes: [{
 						gridLines: {
@@ -88,7 +70,7 @@ var Readings = function() {
 						},
 						type: 'time',
 						time: {
-							unit: 'day'
+							unit: 'hour'
 						},
 						ticks: {
 							source: 'auto',
@@ -107,10 +89,7 @@ var Readings = function() {
 						scaleLabel: {
 							display: false,
 							labelString: 'Story Points'
-						},
-						//ticks: {
-							//beginAtZero:true
-						//}
+						}
 					}]
 				}
 			}

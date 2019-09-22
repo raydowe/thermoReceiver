@@ -7,7 +7,7 @@ app.use(express.static('public'))
 
 app.get('/readings', (req, res) => {
   var db = require('better-sqlite3')('./temperature.sqlite', {});
-  var readings = db.prepare('SELECT * FROM Readings').all();
+  var readings = db.prepare('SELECT * FROM Readings ORDER BY created ASC').all();
 	res.send(readings);
 });
 
