@@ -17,6 +17,8 @@ var Receiver = function() {
   var sensor_values = {};
 
   this.init = function() {
+    ctx.assertTables();
+
     var heartbeat_timer = setInterval(ctx.heartbeat, 5 * 60 * 1000);
     setTimeout(function() {
       ctx.heartbeat();
@@ -24,6 +26,11 @@ var Receiver = function() {
 
     message_timer = setInterval(ctx.checkMessageQueue, 500);
     ctx.checkMessageQueue();
+  }
+
+  this.assertTables = function() {
+    var db = ctx.getDatabase();
+    db.prepare('CREATE TABLE IF NOT EXISTS Readings (id INTEGER PRIMARY KEY, sensor INTEGER, temperature FLOAT, created DATETIME DEFAULT CURRENT_TIMESTAMP)').run();
   }
 
   this.heartbeat = function() {
