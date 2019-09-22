@@ -20,28 +20,40 @@ var Readings = function() {
 	this.organizeData = function(response) {
 		var datasets = [];
 
+		var weather = [];
 		var downstairs = [];
-		var outside = [];
+
 
 		for (var i = 0; i < response.length; i++) {
 			var response_datapoint = response[i];
 			var datapoint = {};
 			datapoint.x = moment(response_datapoint.created);
 			datapoint.y = response_datapoint.temperature;
+			if (response_datapoint.sensor == 0) {
+				weather.push(datapoint);
+			}
 			if (response_datapoint.sensor == 1) {
 				downstairs.push(datapoint);
 			}
 		}
 
-		ctx.makeChart(downstairs, outside);
+		ctx.makeChart(weather, downstairs);
 	}
 
-	this.makeChart = function(downstairs, outside) {
+	this.makeChart = function(weather, downstairs) {
 
 		var config = {
 			type: 'line',
 		  data: {
 				datasets: [
+
+					// weather
+					{
+						borderColor: 'rgb(0, 0, 255)',
+						data: weather,
+						label: 'Weather'
+					},
+
 
 					// burndown
 					{
