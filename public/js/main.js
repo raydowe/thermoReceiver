@@ -87,8 +87,8 @@ var Readings = function() {
 							color: 'rgba(255,255,255,0.2)',
 						},
 						scaleLabel: {
-							display: false,
-							labelString: 'Story Points'
+							display: true,
+							labelString: 'Temperature'
 						}
 					}]
 				}
