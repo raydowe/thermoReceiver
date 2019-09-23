@@ -7,7 +7,14 @@ app.use(express.static('public'))
 
 app.get('/readings', (req, res) => {
   var db = require('better-sqlite3')('./temperature.sqlite', {});
-  var readings = db.prepare('SELECT * FROM Readings ORDER BY created ASC').all();
+  var timespan = req.query.timespan;
+  var age = '1 day';
+  if (timespan != undefined) {
+    if (timespan == 'week') {
+      age = '1 week';
+    }
+  }
+  var readings = db.prepare('SELECT * FROM Readings WHERE created >= datetime("now", "-' + age + '") ORDER BY created ASC').all();
 	res.send(readings);
 });
 

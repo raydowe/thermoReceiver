@@ -5,6 +5,19 @@ body {
 	margin:0;
 }
 
+.navigation {
+	text-align:center;
+	padding:1em 0;
+}
+
+.navigation #next {
+	margin:0 0 0 1em;
+}
+
+.navigation input[type=radio] {
+	margin:0 0.4em 0 1em;
+}
+
 .chart-container {
 	position:absolute;
 	top:50;
