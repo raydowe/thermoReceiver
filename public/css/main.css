@@ -10,6 +10,19 @@ body {
 	padding:1em 0;
 }
 
+.navigation .start-date,
+.navigation .end-date {
+	padding:0em 1em;
+}
+
+.navigation .start-date {
+	float:left;
+}
+
+.navigation .end-date {
+	float:right;
+}
+
 .navigation #next {
 	margin:0 0 0 1em;
 }

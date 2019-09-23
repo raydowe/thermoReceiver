@@ -1,6 +1,7 @@
 var Readings = function() {
 
 	var ctx = this;
+	var chart;
 	var ending = moment();
 	var timespan = 'day';
 
@@ -18,7 +19,6 @@ var Readings = function() {
 	}
 
 	this.previousTime = function() {
-		console.log('previous');
 		var days = (timespan == 'week') ? 7 : 1 ;
 		ending.add(-days, 'day');
 		ctx.loadReadings();
@@ -35,6 +35,13 @@ var Readings = function() {
 		return false;
 	}
 
+	this.adjustStartEnd = function() {
+		var days = (timespan == 'week') ? 7 : 1 ;
+		var start = ending.clone().add(-days, 'day');
+		$('.start-date').html(start.format('DD/MM/YY'));
+		$('.end-date').html(ending.format('DD/MM/YY'));
+	}
+
 	this.loadReadings = function() {
 		$.ajax({
 		  url: '/readings',
@@ -46,6 +53,7 @@ var Readings = function() {
 		})
 	  .done(function(response) {
 			ctx.organizeData(response);
+			ctx.adjustStartEnd();
 		});
 	}
 
@@ -68,29 +76,42 @@ var Readings = function() {
 			}
 		}
 
-		ctx.makeChart(weather, downstairs);
+		var dataset = [{
+				// downstairs
+				borderColor: 'rgb(255, 0, 0)',
+				data: downstairs,
+				label: 'Downstairs'
+			},{
+				// weather
+				borderColor: 'rgb(0, 0, 255)',
+				data: weather,
+				label: 'Weather'
+			}];
+
+		if (chart != null) {
+			ctx.updateChart(dataset);
+		} else {
+			ctx.makeChart(dataset);
+		}
 	}
 
-	this.makeChart = function(weather, downstairs) {
+	this.updateChart = function(datasets) {
+		var count_to_remove = chart.data.datasets.length;
+		for (var i = 0; i < count_to_remove; i++) {
+			chart.data.datasets.pop(chart.data.datasets[0]);
+		}
+		for (var i = 0; i < datasets.length; i++) {
+			chart.data.datasets.push(datasets[i]);
+		}
+		chart.update();
+	}
+
+	this.makeChart = function(datasets) {
 
 		var config = {
 			type: 'line',
 		  data: {
-				datasets: [
-
-					{ // downstairs
-						borderColor: 'rgb(255, 0, 0)',
-						data: downstairs,
-						label: 'Downstairs'
-					},
-
-					{ // weather
-						borderColor: 'rgb(0, 0, 255)',
-						data: weather,
-						label: 'Weather'
-					}
-
-				]
+				datasets: datasets
 			},
 			options: {
 				responsive: true,
@@ -129,7 +150,7 @@ var Readings = function() {
 		}
 
 		var canvasContext = document.getElementById('chart-canvas').getContext('2d');
-		var chart = new Chart(canvasContext, config);
+		chart = new Chart(canvasContext, config);
 	}
 
 	ctx.Readings();
