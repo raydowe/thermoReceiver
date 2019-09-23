@@ -140,6 +140,12 @@ var Readings = function() {
 							display:true,
 							color: 'rgba(255,255,255,0.2)',
 						},
+						ticks: {
+							stepSize: 1,
+							callback: function(value, index, values) {
+								return value + '°';
+							}
+						},
 						scaleLabel: {
 							display: true,
 							labelString: 'Temperature'
