@@ -1,15 +1,48 @@
 var Readings = function() {
 
 	var ctx = this;
+	var ending = moment();
+	var timespan = 'day';
 
 	this.Readings = function() {
+		$('.timespan').change(ctx.timespanChange);
+		$('#previous').click(ctx.previousTime);
+		$('#next').click(ctx.nextTime);
 		ctx.loadReadings();
+	}
+
+	this.timespanChange = function() {
+		timespan = $('input[name=timespan]:checked').val();
+		ctx.loadReadings();
+		return false;
+	}
+
+	this.previousTime = function() {
+		console.log('previous');
+		var days = (timespan == 'week') ? 7 : 1 ;
+		ending.add(-days, 'day');
+		ctx.loadReadings();
+		return false;
+	}
+
+	this.nextTime = function() {
+		var days = (timespan == 'week') ? 7 : 1 ;
+		ending.add(days, 'day');
+		if (ending > moment()) {
+			ending = moment();
+		}
+		ctx.loadReadings();
+		return false;
 	}
 
 	this.loadReadings = function() {
 		$.ajax({
 		  url: '/readings',
-			dataType:'json'
+			data: {
+				ending: ending.format('YYYY-MM-DD HH:mm:ss'),
+				timespan: timespan
+			},
+			dataType:'json',
 		})
 	  .done(function(response) {
 			ctx.organizeData(response);
