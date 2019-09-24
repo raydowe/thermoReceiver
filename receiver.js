@@ -59,12 +59,12 @@ var Receiver = function() {
   }
 
   this.heartbeat = function() {
-    for (var i = 1; i < SENSORS.length; i++) {
+    for (var i = 0; i < SENSORS.length; i++) {
       var sensor = SENSORS[i];
       if (ctx.messageNeededForSensor(sensor)) {
         if (sensor.id == 0) {
-          ctx.getWeather(function(temperature) {
-            ctx.saveReading(sensor.id, temperature)
+          ctx.getWeather(sensor.id, function(sensor_id, temperature) {
+            ctx.saveReading(sensor_id, temperature)
           });
         } else {
           var temperature = ctx.getMessage(sensor.id);
@@ -109,7 +109,7 @@ var Receiver = function() {
     }
   }
 
-  this.getWeather = function(callback) {
+  this.getWeather = function(sensor_id, callback) {
     console.log('Getting weather...');
     request(
   		{
@@ -119,9 +119,10 @@ var Receiver = function() {
   		function(error, response, body) {
         console.log('Response received...');
         var json = JSON.parse(body);
-        var sensor = 0;
         var temperature = json.main.temp;
-        callback(temperature);
+	console.log('Weather temp = ' + temperature);
+console.log(callback);
+        callback(sensor_id, temperature);
   		}
   	);
   }
