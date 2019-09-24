@@ -12,29 +12,6 @@ if (is_pi) {
 
 var Receiver = function() {
 
-  const SENSORS = [
-    {
-      id: 0,
-      name: 'weather',
-      refresh: 15
-    },
-    {
-      id: 1,
-      name: 'downstairs',
-      refresh: 5
-    },
-    {
-      id: 2,
-      name: 'upstairs',
-      refresh: 5
-    },
-    {
-      id: 3,
-      name: 'heating',
-      refresh: 5
-    }
-  ];
-
   var ctx = this;
   var configuration = JSON.parse(fs.readFileSync(__dirname + '/configuration.json'));
   var message_timer;
@@ -59,30 +36,45 @@ var Receiver = function() {
   }
 
   this.heartbeat = function() {
-    for (var i = 0; i < SENSORS.length; i++) {
-      var sensor = SENSORS[i];
-      if (ctx.messageNeededForSensor(sensor)) {
-        if (sensor.id == 0) {
-          ctx.getWeather(sensor.id, function(sensor_id, temperature) {
-            ctx.saveReading(sensor_id, temperature)
-          });
-        } else {
-          var temperature = ctx.getMessage(sensor.id);
-      	  if (temperature != null) {
-            ctx.saveReading(sensor.id, temperature)
-            sensor_values[sensor.id.toString()] = undefined;
-      	  }
-        }
-      }
+
+if (ctx.messageNeededForSensor(1, 5)) {
+  var temperature = ctx.getMessage(1);
+  if (temperature != null) {
+    ctx.saveReading(1, temperature)
+    sensor_values['1'] = undefined;
+  }
+}
+
+if (ctx.messageNeededForSensor(2, 5)) {
+  var temperature = ctx.getMessage(2);
+  if (temperature != null) {
+    ctx.saveReading(2, temperature)
+    sensor_values['2'] = undefined;
+  }
+}
+
+if (ctx.messageNeededForSensor(3, 5)) {
+  var temperature = ctx.getMessage(3);
+  if (temperature != null) {
+    ctx.saveReading(3, temperature)
+    sensor_values['3'] = undefined;
+  }
+}
+
+
+      if (ctx.messageNeededForSensor(0, 15)) {
+        ctx.getWeather(function(temperature) {
+        ctx.saveReading(0, temperature)
+      });
     }
   }
 
-  this.messageNeededForSensor = function(sensor) {
+  this.messageNeededForSensor = function(sensor_id, frequency) {
     var db = ctx.getDatabase();
-    var results = db.prepare('SELECT * FROM Readings WHERE sensor = ? AND created >= Datetime("now", "-' + sensor.refresh.toString() + ' minutes")').get(sensor.id);
+    var results = db.prepare('SELECT * FROM Readings WHERE sensor = ? AND created >= Datetime("now", "-' + frequency.toString() + ' minutes")').get(sensor_id);
     var needs_update = results == undefined;
     if (needs_update) {
-      console.log('Sensor ' + sensor.id.toString() + ' needs update: ' + needs_update);
+      console.log('Sensor ' + sensor_id.toString() + ' needs update: ' + needs_update);
     }
     return needs_update;
   }
@@ -109,7 +101,7 @@ var Receiver = function() {
     }
   }
 
-  this.getWeather = function(sensor_id, callback) {
+  this.getWeather = function(callback) {
     console.log('Getting weather...');
     request(
   		{
@@ -120,15 +112,15 @@ var Receiver = function() {
         console.log('Response received...');
         var json = JSON.parse(body);
         var temperature = json.main.temp;
-        callback(sensor_id, temperature);
+        callback(temperature);
   		}
   	);
   }
 
-  this.saveReading = function(sensor, temperature) {
-    console.log('Saving ' + sensor + ': ' + temperature);
+  this.saveReading = function(sensor_id, temperature) {
+    console.log('Saving ' + sensor_id + ': ' + temperature);
     var db = ctx.getDatabase();
-    db.prepare('INSERT INTO Readings (sensor, temperature) VALUES(?, ?)').run(sensor, temperature);
+    db.prepare('INSERT INTO Readings (sensor, temperature) VALUES(?, ?)').run(sensor_id, temperature);
   }
 
   this.getDatabase = function() {
