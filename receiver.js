@@ -6,6 +6,8 @@ if (is_pi) {
   console.log('Starting listeneing for 433MHz messages...')
   rcswitch = require('rcswitch-gpiomem3')
   rcswitch.enableReceive(2);
+} else {
+  console.log('Not a Pi. Will only be able to gather weather.');
 }
 
 var Receiver = function() {
@@ -66,10 +68,10 @@ var Receiver = function() {
           });
         } else {
           var temperature = ctx.getMessage(sensor.id);
-	  if (temperature != null) {
+      	  if (temperature != null) {
             ctx.saveReading(sensor.id, temperature)
             sensor_values[sensor.id.toString()] = undefined;
-	  }
+      	  }
         }
       }
     }
@@ -80,7 +82,7 @@ var Receiver = function() {
     var results = db.prepare('SELECT * FROM Readings WHERE sensor = ? AND created >= Datetime("now", "-' + sensor.refresh.toString() + ' minutes")').get(sensor.id);
     var needs_update = results == undefined;
     if (needs_update) {
-        console.log('Sensor ' + sensor.id.toString() + ' needs update: ' + needs_update);
+      console.log('Sensor ' + sensor.id.toString() + ' needs update: ' + needs_update);
     }
     return needs_update;
   }
@@ -99,8 +101,8 @@ var Receiver = function() {
       var message = rcswitch.getReceivedValue().toString();
       var sensor = message.substring(0, 1);
       var temperature = parseInt(message.substring(1, 5)) / 100;
-      if (sensor_values[sensor.toString()] != temperature) {      
-	console.log('Message ' + sensor + ': ' + temperature);
+      if (sensor_values[sensor.toString()] != temperature) {
+        console.log('Message ' + sensor + ': ' + temperature);
         sensor_values[sensor.toString()] = temperature;
       }
       rcswitch.resetAvailable();
