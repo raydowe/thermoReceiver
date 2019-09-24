@@ -2,10 +2,24 @@ var Readings = function() {
 
 	var ctx = this;
 	var chart;
-	var ending = moment();
-	var timespan = 'day';
+	var starting;
+	var ending;
+	var days;
+	var offset;
 
 	this.Readings = function() {
+		var params = new URLSearchParams(window.location.search);
+		days = 1;
+		if (params.has('days')) {
+			days = parseInt(params.get('days'));
+		}
+		$('.timespan[value=' + days + ']').attr('checked', 'checked');
+		offset = 0;
+		if (params.has('offset')) {
+			offset = parseInt(params.get('offset'));
+		}
+		ending = moment().add(-offset, 'days').endOf('day');
+		starting = ending.clone().add(-days, 'days').add(1, 'milliseconds');
 		$('.timespan').change(ctx.timespanChange);
 		$('#previous').click(ctx.previousTime);
 		$('#next').click(ctx.nextTime);
@@ -13,41 +27,43 @@ var Readings = function() {
 	}
 
 	this.timespanChange = function() {
-		timespan = $('input[name=timespan]:checked').val();
-		ctx.loadReadings();
+		days = $('input[name=timespan]:checked').val();
+		ctx.navigate();
 		return false;
 	}
 
 	this.previousTime = function() {
-		var days = (timespan == 'week') ? 7 : 1 ;
-		ending.add(-days, 'day');
-		ctx.loadReadings();
+		offset += days;
+		ctx.navigate();
 		return false;
 	}
 
 	this.nextTime = function() {
-		var days = (timespan == 'week') ? 7 : 1 ;
-		ending.add(days, 'day');
-		if (ending > moment()) {
-			ending = moment();
+		offset -= days;
+		if (offset < 0) {
+			offset = 0;
 		}
-		ctx.loadReadings();
+		ctx.navigate();
 		return false;
 	}
 
+	this.navigate = function() {
+		window.location = '?offset=' + offset.toString() + '&days=' + days.toString();
+	}
+
 	this.adjustStartEnd = function() {
-		var days = (timespan == 'week') ? 7 : 1 ;
-		var start = ending.clone().add(-days, 'day');
-		$('.start-date').html(start.format('DD/MM/YY'));
+		$('.start-date').html(starting.format('DD/MM/YY'));
 		$('.end-date').html(ending.format('DD/MM/YY'));
 	}
 
 	this.loadReadings = function() {
+		var ending_datetime = ending.utc().format('YYYY-MM-DD HH:mm:ss');
+		console.log(ending_datetime);
 		$.ajax({
 		  url: '/readings',
 			data: {
-				ending: ending.format('YYYY-MM-DD HH:mm:ss'),
-				timespan: timespan
+				ending: ending_datetime,
+				days: days
 			},
 			dataType:'json',
 		})
@@ -88,25 +104,13 @@ var Readings = function() {
 				label: 'Weather'
 			}];
 
-		if (chart != null) {
-			ctx.updateChart(dataset);
-		} else {
-			ctx.makeChart(dataset);
-		}
+		var min = starting;
+		var max = ending;
+
+		ctx.makeChart(dataset, min, max);
 	}
 
-	this.updateChart = function(datasets) {
-		var count_to_remove = chart.data.datasets.length;
-		for (var i = 0; i < count_to_remove; i++) {
-			chart.data.datasets.pop(chart.data.datasets[0]);
-		}
-		for (var i = 0; i < datasets.length; i++) {
-			chart.data.datasets.push(datasets[i]);
-		}
-		chart.update();
-	}
-
-	this.makeChart = function(datasets) {
+	this.makeChart = function(datasets, min, max) {
 
 		var config = {
 			type: 'line',
@@ -124,7 +128,9 @@ var Readings = function() {
 						},
 						type: 'time',
 						time: {
-							unit: 'hour'
+							unit: 'hour',
+							min: min,
+							max: max
 						},
 						ticks: {
 							source: 'auto',

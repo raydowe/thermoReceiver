@@ -10,6 +10,29 @@ if (is_pi) {
 
 var Receiver = function() {
 
+  const SENSORS = [
+    {
+      id: 0,
+      name: 'weather',
+      refresh: 15
+    },
+    {
+      id: 1,
+      name: 'downstairs',
+      refresh: 5
+    },
+    {
+      id: 2,
+      name: 'upstairs',
+      refresh: 5
+    },
+    {
+      id: 3,
+      name: 'heating',
+      refresh: 5
+    }
+  ]
+
   var ctx = this;
   var configuration = JSON.parse(fs.readFileSync(__dirname + '/configuration.json'));
   var message_timer;
@@ -19,7 +42,7 @@ var Receiver = function() {
   this.init = function() {
     ctx.assertTables();
 
-    var heartbeat_timer = setInterval(ctx.heartbeat, 5 * 60 * 1000);
+    var heartbeat_timer = setInterval(ctx.heartbeat, 60000); // one minute
     setTimeout(function() {
       ctx.heartbeat();
     }, 5000);
@@ -34,12 +57,11 @@ var Receiver = function() {
   }
 
   this.heartbeat = function() {
-    if (ctx.messageNeededForSensor(1, '5 minutes')) {
-      ctx.getMessage(1);
-    }
-
-    if (ctx.messageNeededForSensor(0, '15 minutes')) {
-      ctx.getWeather();
+    for (var i = 1; i < SENSORS.length; i++) {
+      var sensor = SENSORS[i];
+      if (ctx.messageNeededForSensor(sensor.id, sensor.refresh.toString() + ' minutes')) {
+        ctx.getMessage(sensor.id);
+      }
     }
   }
 
