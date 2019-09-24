@@ -42,7 +42,7 @@ var Receiver = function() {
   this.init = function() {
     ctx.assertTables();
 
-    var heartbeat_timer = setInterval(ctx.heartbeat, 60000); // one minute
+    var heartbeat_timer = setInterval(ctx.heartbeat, 60 * 1000); // one minute
     setTimeout(function() {
       ctx.heartbeat();
     }, 5000);
@@ -53,24 +53,23 @@ var Receiver = function() {
 
   this.assertTables = function() {
     var db = ctx.getDatabase();
-    db.prepare('CREATE TABLE IF NOT EXISTS Readings (id INTEGER PRIMARY KEY, sensor INTEGER, temperature FLOAT, created DATETIME DEFAULT CURRENT_TIMESTAMP)').run();
+    db.prepare('CREATE TABLE IF NOT EXISTS Readings (id INTEGER PRIMARY KEY, sensor INTEGER NOT NULL, temperature FLOAT NOT NULL, created DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL)').run();
   }
 
   this.heartbeat = function() {
-
     for (var i = 1; i < SENSORS.length; i++) {
       var sensor = SENSORS[i];
-
       if (ctx.messageNeededForSensor(sensor)) {
-
         if (sensor.id == 0) {
           ctx.getWeather(function(temperature) {
             ctx.saveReading(sensor.id, temperature)
           });
         } else {
           var temperature = ctx.getMessage(sensor.id);
-          ctx.saveReading(sensor.id, temperature)
-          sensor_values[sensor.id.toString()] = undefined;
+	  if (temperature != null) {
+            ctx.saveReading(sensor.id, temperature)
+            sensor_values[sensor.id.toString()] = undefined;
+	  }
         }
       }
     }
@@ -79,7 +78,11 @@ var Receiver = function() {
   this.messageNeededForSensor = function(sensor) {
     var db = ctx.getDatabase();
     var results = db.prepare('SELECT * FROM Readings WHERE sensor = ? AND created >= Datetime("now", "-' + sensor.refresh.toString() + ' minutes")').get(sensor.id);
-    return results == undefined;
+    var needs_update = results == undefined;
+    if (needs_update) {
+        console.log('Sensor ' + sensor.id.toString() + ' needs update: ' + needs_update);
+    }
+    return needs_update;
   }
 
   this.getMessage = function(sensor) {
@@ -96,7 +99,10 @@ var Receiver = function() {
       var message = rcswitch.getReceivedValue().toString();
       var sensor = message.substring(0, 1);
       var temperature = parseInt(message.substring(1, 5)) / 100;
-      sensor_values[sensor.toString()] = temperature;
+      if (sensor_values[sensor.toString()] != temperature) {      
+	console.log('Message ' + sensor + ': ' + temperature);
+        sensor_values[sensor.toString()] = temperature;
+      }
       rcswitch.resetAvailable();
     }
   }
