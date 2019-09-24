@@ -44,7 +44,7 @@ var Receiver = function() {
   this.init = function() {
     ctx.assertTables();
 
-    var heartbeat_timer = setInterval(ctx.heartbeat, 60 * 1000); // one minute
+    var heartbeat_timer = setInterval(ctx.heartbeat, 20 * 1000); // twenty seconds minute
     setTimeout(function() {
       ctx.heartbeat();
     }, 5000);
