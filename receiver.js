@@ -120,8 +120,6 @@ var Receiver = function() {
         console.log('Response received...');
         var json = JSON.parse(body);
         var temperature = json.main.temp;
-	console.log('Weather temp = ' + temperature);
-console.log(callback);
         callback(sensor_id, temperature);
   		}
   	);
