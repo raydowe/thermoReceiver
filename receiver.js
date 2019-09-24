@@ -10,8 +10,28 @@ if (is_pi) {
 
 var Receiver = function() {
 
-  const DOWNSTAIRS_SENSOR = 1;
-  const WEATHER_SENSOR = 0;
+  const SENSORS = [
+    {
+      id: 0,
+      name: 'weather',
+      refresh: 15
+    },
+    {
+      id: 1,
+      name: 'downstairs',
+      refresh: 5
+    },
+    {
+      id: 2,
+      name: 'upstairs',
+      refresh: 5
+    },
+    {
+      id: 3,
+      name: 'heating',
+      refresh: 5
+    }
+  ];
 
   var ctx = this;
   var configuration = JSON.parse(fs.readFileSync(__dirname + '/configuration.json'));
@@ -22,7 +42,7 @@ var Receiver = function() {
   this.init = function() {
     ctx.assertTables();
 
-    var heartbeat_timer = setInterval(ctx.heartbeat, 5 * 60 * 1000);
+    var heartbeat_timer = setInterval(ctx.heartbeat, 60000); // one minute
     setTimeout(function() {
       ctx.heartbeat();
     }, 5000);
@@ -37,22 +57,28 @@ var Receiver = function() {
   }
 
   this.heartbeat = function() {
-    if (ctx.messageNeededForSensor(DOWNSTAIRS_SENSOR, '5 minutes')) {
-      var temperature = ctx.getMessage(DOWNSTAIRS_SENSOR);
-      ctx.saveReading(DOWNSTAIRS_SENSOR, temperature)
-      sensor_values[DOWNSTAIRS_SENSOR.toString()] = undefined;
-    }
 
-    if (ctx.messageNeededForSensor(WEATHER_SENSOR, '15 minutes')) {
-      ctx.getWeather(function(temperature) {
-        ctx.saveReading(WEATHER_SENSOR, temperature)
-      });
+    for (var i = 1; i < SENSORS.length; i++) {
+      var sensor = SENSORS[i];
+
+      if (ctx.messageNeededForSensor(sensor)) {
+
+        if (sensor.id == 0) {
+          ctx.getWeather(function(temperature) {
+            ctx.saveReading(sensor.id, temperature)
+          });
+        } else {
+          var temperature = ctx.getMessage(sensor.id);
+          ctx.saveReading(sensor.id, temperature)
+          sensor_values[sensor.id.toString()] = undefined;
+        }
+      }
     }
   }
 
-  this.messageNeededForSensor = function(sensor, duration) {
+  this.messageNeededForSensor = function(sensor) {
     var db = ctx.getDatabase();
-    var results = db.prepare('SELECT * FROM Readings WHERE sensor = ? AND created >= Datetime("now", "-' + duration + '")').get(sensor);
+    var results = db.prepare('SELECT * FROM Readings WHERE sensor = ? AND created >= Datetime("now", "-' + sensor.refresh.toString() + ' minutes")').get(sensor.id);
     return results == undefined;
   }
 
