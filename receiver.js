@@ -37,36 +37,40 @@ var Receiver = function() {
 
   this.heartbeat = function() {
 
-if (ctx.messageNeededForSensor(1, 5)) {
-  var temperature = ctx.getMessage(1);
-  if (temperature != null) {
-    ctx.saveReading(1, temperature)
-    sensor_values['1'] = undefined;
-  }
-}
-
-if (ctx.messageNeededForSensor(2, 5)) {
-  var temperature = ctx.getMessage(2);
-  if (temperature != null) {
-    ctx.saveReading(2, temperature)
-    sensor_values['2'] = undefined;
-  }
-}
-
-if (ctx.messageNeededForSensor(3, 5)) {
-  var temperature = ctx.getMessage(3);
-  if (temperature != null) {
-    ctx.saveReading(3, temperature)
-    sensor_values['3'] = undefined;
-  }
-}
-
-
-      if (ctx.messageNeededForSensor(0, 15)) {
-        ctx.getWeather(function(temperature) {
+    // weather
+    if (ctx.messageNeededForSensor(0, 15)) {
+      ctx.getWeather(function(temperature) {
         ctx.saveReading(0, temperature)
       });
     }
+
+    // downstairs
+    if (ctx.messageNeededForSensor(1, 5)) {
+      var temperature = ctx.getMessage(1);
+      if (temperature != null) {
+        ctx.saveReading(1, temperature)
+        sensor_values['1'] = undefined;
+      }
+    }
+
+    // upstairs
+    if (ctx.messageNeededForSensor(2, 5)) {
+      var temperature = ctx.getMessage(2);
+      if (temperature != null) {
+        ctx.saveReading(2, temperature)
+        sensor_values['2'] = undefined;
+      }
+    }
+
+    // heating
+    if (ctx.messageNeededForSensor(3, 5)) {
+      var temperature = ctx.getMessage(3);
+      if (temperature != null) {
+        ctx.saveReading(3, temperature)
+        sensor_values['3'] = undefined;
+      }
+    }
+
   }
 
   this.messageNeededForSensor = function(sensor_id, frequency) {
