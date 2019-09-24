@@ -78,31 +78,48 @@ var Readings = function() {
 
 		var weather = [];
 		var downstairs = [];
+		var upstairs = [];
+		var heating = [];
 
 		for (var i = 0; i < response.length; i++) {
 			var response_datapoint = response[i];
 			var datapoint = {};
 			datapoint.x = moment.utc(response_datapoint.created);
 			datapoint.y = response_datapoint.temperature;
-			if (response_datapoint.sensor == 0) {
-				weather.push(datapoint);
-			}
-			if (response_datapoint.sensor == 1) {
-				downstairs.push(datapoint);
+			switch (response_datapoint.sensor) {
+				case 0:
+					weather.push(datapoint);
+					break;
+				case 1:
+					downstairs.push(datapoint);
+					break;
+				case 2:
+					upstairs.push(datapoint);
+					break;
+				case 3:
+					heating.push(datapoint);
+					break;
 			}
 		}
 
 		var dataset = [{
-				// downstairs
-				borderColor: 'rgb(255, 0, 0)',
+				borderColor: 'rgb(255, 100, 0)',
 				data: downstairs,
 				label: 'Downstairs'
 			},{
-				// weather
+				borderColor: 'rgb(255, 221, 0)',
+				data: upstairs,
+				label: 'Upstairs'
+			},{
+				borderColor: 'rgb(255, 0, 0)',
+				data: heating,
+				label: 'Heating'
+			},{
 				borderColor: 'rgb(0, 0, 255)',
 				data: weather,
 				label: 'Weather'
-			}];
+			}
+		];
 
 		var min = starting;
 		var max = ending;
