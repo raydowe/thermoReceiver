@@ -3,12 +3,15 @@ const request = require('request');
 const is_pi = require('detect-rpi')();
 var rcswitch;
 if (is_pi) {
-  console.log('Starting listeneing for 433Mhz messages...')
+  console.log('Starting listeneing for 433MHz messages...')
   rcswitch = require('rcswitch-gpiomem3')
   rcswitch.enableReceive(2);
 }
 
 var Receiver = function() {
+
+  const DOWNSTAIRS_SENSOR = 1;
+  const WEATHER_SENSOR = 0;
 
   var ctx = this;
   var configuration = JSON.parse(fs.readFileSync(__dirname + '/configuration.json'));
@@ -34,12 +37,16 @@ var Receiver = function() {
   }
 
   this.heartbeat = function() {
-    if (ctx.messageNeededForSensor(1, '5 minutes')) {
-      ctx.getMessage(1);
+    if (ctx.messageNeededForSensor(DOWNSTAIRS_SENSOR, '5 minutes')) {
+      var temperature = ctx.getMessage(DOWNSTAIRS_SENSOR);
+      ctx.saveReading(DOWNSTAIRS_SENSOR, temperature)
+      sensor_values[DOWNSTAIRS_SENSOR.toString()] = undefined;
     }
 
-    if (ctx.messageNeededForSensor(0, '15 minutes')) {
-      ctx.getWeather();
+    if (ctx.messageNeededForSensor(WEATHER_SENSOR, '15 minutes')) {
+      ctx.getWeather(function(temperature) {
+        ctx.saveReading(WEATHER_SENSOR, temperature)
+      });
     }
   }
 
@@ -53,9 +60,9 @@ var Receiver = function() {
     var temperature = sensor_values[sensor.toString()];
     if (temperature == undefined) {
       // no message queued
-      return;
+      return null;
     }
-    ctx.saveReading(sensor, temperature)
+    return temperature;
   }
 
   this.checkMessageQueue = function() {
@@ -68,7 +75,7 @@ var Receiver = function() {
     }
   }
 
-  this.getWeather = function() {
+  this.getWeather = function(callback) {
     console.log('Getting weather...');
     request(
   		{
@@ -80,7 +87,7 @@ var Receiver = function() {
         var json = JSON.parse(body);
         var sensor = 0;
         var temperature = json.main.temp;
-        ctx.saveReading(sensor, temperature);
+        callback(temperature);
   		}
   	);
   }
