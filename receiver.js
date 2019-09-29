@@ -77,9 +77,6 @@ var Receiver = function() {
     var db = ctx.getDatabase();
     var results = db.prepare('SELECT * FROM Readings WHERE sensor = ? AND created >= Datetime("now", "-' + frequency.toString() + ' minutes")').get(sensor_id);
     var needs_update = results == undefined;
-    if (needs_update) {
-      console.log('Sensor ' + sensor_id.toString() + ' needs update: ' + needs_update);
-    }
     return needs_update;
   }
 
@@ -130,6 +127,28 @@ var Receiver = function() {
   this.getDatabase = function() {
     var db = require('better-sqlite3')('./temperature.sqlite', {});
     return db;
+  }
+
+  this.checkDigit = function(message) {
+    var even = 0;
+    var odd = 0;
+    var body = message.substring(0, message.length - 1);
+    var check_digit = message.substring(message.length - 1, message.length);
+    for (var i = 0; i < body.length; i++) {
+      var digit = parseInt(body.substring(i, i + 1));
+      if ((i + 1) % 2 == 0) {
+        even += digit;
+      } else {
+        odd += digit;
+      }
+    }
+    var total = (odd * 3) + even;
+    var remainder = total % 10;
+    var result = 10 - remainder;
+    if (result == 10) {
+      result = 0;
+    }
+    return (check_digit == result);
   }
 
   ctx.init();
