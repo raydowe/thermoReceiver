@@ -145,9 +145,9 @@ var Readings = function() {
 						},
 						type: 'time',
 						time: {
-							unit: 'hour',
-							min: min,
-							max: max
+							unit: 'hour'//,
+							//min: min,
+							//max: max
 						},
 						ticks: {
 							source: 'auto',

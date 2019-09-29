@@ -1,26 +1,20 @@
 const fs = require('fs');
+const moment = require('moment');
 const request = require('request');
 const is_pi = require('detect-rpi')();
-var rcswitch;
-if (is_pi) {
-  console.log('Starting listeneing for 433MHz messages...')
-  rcswitch = require('rcswitch-gpiomem3')
-  rcswitch.enableReceive(2);
-} else {
-  console.log('Not a Pi. Will only be able to gather weather.');
-}
 
 var Receiver = function() {
 
   var ctx = this;
   var configuration = JSON.parse(fs.readFileSync(__dirname + '/configuration.json'));
+  var rcswitch;
   var message_timer;
   var heartbeat_timer;
   var sensor_values = {};
 
   this.init = function() {
     ctx.assertTables();
-
+    ctx.startReceiving();
     var heartbeat_timer = setInterval(ctx.heartbeat, 20 * 1000); // twenty seconds minute
     setTimeout(function() {
       ctx.heartbeat();
@@ -28,6 +22,16 @@ var Receiver = function() {
 
     message_timer = setInterval(ctx.checkMessageQueue, 500);
     ctx.checkMessageQueue();
+  }
+
+  this.startReceiving = function() {
+    if (is_pi) {
+      ctx.log('Starting listeneing for 433MHz messages...')
+      rcswitch = require('rcswitch-gpiomem3')
+      rcswitch.enableReceive(2);
+    } else {
+      ctx.log('Not a Pi. Will only be able to gather weather.');
+    }
   }
 
   this.assertTables = function() {
@@ -92,10 +96,17 @@ var Receiver = function() {
   this.checkMessageQueue = function() {
     if (is_pi && rcswitch.available()) {
       var message = rcswitch.getReceivedValue().toString();
-      var sensor = message.substring(0, 1);
+      if (message.length != 6) {
+        ctx.log('Bad message length: ' + message);
+        return;
+      }
+      if (!ctx.validateMessage(message)) {
+        ctx.log('Bad check digit: ' + message);
+        return;
+      }
+      var sensor = parseInt(message.substring(0, 1));
       var temperature = parseInt(message.substring(1, 5)) / 100;
       if (sensor_values[sensor.toString()] != temperature) {
-        console.log('Message ' + sensor + ': ' + temperature);
         sensor_values[sensor.toString()] = temperature;
       }
       rcswitch.resetAvailable();
@@ -103,14 +114,14 @@ var Receiver = function() {
   }
 
   this.getWeather = function(callback) {
-    console.log('Getting weather...');
+    ctx.log('Getting weather...');
     request(
   		{
         url: 'https://api.openweathermap.org/data/2.5/weather?lat=' + configuration.openweather.lat + '&lon=' + configuration.openweather.lon + '&appid=' + configuration.openweather.api_key + '&units=metric',
   			method:'GET'
   		},
   		function(error, response, body) {
-        console.log('Response received...');
+        ctx.log('Response received...');
         var json = JSON.parse(body);
         var temperature = json.main.temp;
         callback(temperature);
@@ -119,7 +130,7 @@ var Receiver = function() {
   }
 
   this.saveReading = function(sensor_id, temperature) {
-    console.log('Saving ' + sensor_id + ': ' + temperature);
+    ctx.log('Saving ' + sensor_id + ': ' + temperature);
     var db = ctx.getDatabase();
     db.prepare('INSERT INTO Readings (sensor, temperature) VALUES(?, ?)').run(sensor_id, temperature);
   }
@@ -129,7 +140,7 @@ var Receiver = function() {
     return db;
   }
 
-  this.checkDigit = function(message) {
+  this.validateMessage = function(message) {
     var even = 0;
     var odd = 0;
     var body = message.substring(0, message.length - 1);
@@ -149,6 +160,11 @@ var Receiver = function() {
       result = 0;
     }
     return (check_digit == result);
+  }
+
+  this.log = function(message) {
+    var output = '[' + moment().format('YYYY-MM-DD HH:mm:ss') + '] ' + message;
+    console.log(output);
   }
 
   ctx.init();
