@@ -35,6 +35,19 @@ body {
 	position:absolute;
 	top:50;
 	right:0;
-	bottom:0;
+	bottom:25;
 	left:0;
+}
+
+.current {
+	position:absolute;
+	left:0;
+	right:0;
+	bottom:0;
+	height:25px;
+}
+
+.current span {
+	display:inline-block;
+	padding:0 1em;
 }

@@ -1,5 +1,28 @@
 var Readings = function() {
 
+	const sensors = [
+		{
+			'id':0,
+			'name':'weather',
+			'color':'rgb(0, 157, 255)'
+		},
+		{
+			'id':1,
+			'name':'downstairs',
+			'color':'rgb(77, 255, 0)'
+		},
+		{
+			'id':2,
+			'name':'upstairs',
+			'color':'rgb(255, 0, 255)'
+		},
+		{
+			'id':3,
+			'name':'heating',
+			'color':'rgb(255, 0, 0)'
+		}
+	];
+
 	var ctx = this;
 	var chart;
 	var starting;
@@ -74,60 +97,53 @@ var Readings = function() {
 	}
 
 	this.organizeData = function(response) {
-		var datasets = [];
-
-		var weather = [];
-		var downstairs = [];
-		var upstairs = [];
-		var heating = [];
-
+		var datapoints = {};
+		var current_temps = {};
 		for (var i = 0; i < response.length; i++) {
 			var response_datapoint = response[i];
 			var datapoint = {};
 			datapoint.x = moment.utc(response_datapoint.created);
 			datapoint.y = response_datapoint.temperature;
-			switch (response_datapoint.sensor) {
-				case 0:
-					weather.push(datapoint);
-					break;
-				case 1:
-					downstairs.push(datapoint);
-					break;
-				case 2:
-					upstairs.push(datapoint);
-					break;
-				case 3:
-					heating.push(datapoint);
-					break;
+			var sensor_key = response_datapoint.sensor.toString();
+			if (datapoints[sensor_key] == null) {
+				datapoints[sensor_key] = [];
 			}
+			datapoints[sensor_key].push(datapoint);
+			current_temps[sensor_key] = response_datapoint.temperature;
 		}
 
-		var dataset = [{
-				borderColor: 'rgb(255, 100, 0)',
-				data: downstairs,
-				label: 'Downstairs'
-			},{
-				borderColor: 'rgb(255, 221, 0)',
-				data: upstairs,
-				label: 'Upstairs'
-			},{
-				borderColor: 'rgb(255, 0, 0)',
-				data: heating,
-				label: 'Heating'
-			},{
-				borderColor: 'rgb(0, 0, 255)',
-				data: weather,
-				label: 'Weather'
-			}
-		];
+		var datasets = ctx.makeDatasets(datapoints);
 
-		var min = starting;
-		var max = ending;
-
-		ctx.makeChart(dataset, min, max);
+		ctx.makeChart(datasets);
+		ctx.currentTemperatures(current_temps);
 	}
 
-	this.makeChart = function(datasets, min, max) {
+	this.makeDatasets = function(datapoints) {
+		var datasets = [];
+		var keys = Object.keys(datapoints);
+		for (var i = 0; i < keys.length; i++) {
+
+			var key = parseInt(keys[i]);
+
+			var sensor;
+			for (var j = 0; j < sensors.length; j++) {
+				if (sensors[j].id == key)
+				sensor = sensors[j];
+			}
+
+			if (sensor != null) {
+				var dataset = {
+					borderColor: sensor.color,
+					data: datapoints[key],
+					label: sensor.name.charAt(0).toUpperCase() + sensor.name.slice(1)
+				}
+				datasets.push(dataset);
+			}
+		}
+		return datasets;
+	}
+
+	this.makeChart = function(datasets) {
 
 		var config = {
 			type: 'line',
@@ -145,9 +161,7 @@ var Readings = function() {
 						},
 						type: 'time',
 						time: {
-							unit: 'hour'//,
-							//min: min,
-							//max: max
+							unit: 'hour'
 						},
 						ticks: {
 							source: 'auto',
@@ -180,6 +194,24 @@ var Readings = function() {
 
 		var canvasContext = document.getElementById('chart-canvas').getContext('2d');
 		chart = new Chart(canvasContext, config);
+	}
+
+	this.currentTemperatures = function(current_temps) {
+		console.log(current_temps);
+		var html = '';
+		var sensor_ids = Object.keys(current_temps);
+		for (var i = 0; i < sensor_ids.length; i++) {
+			var sensor_id = parseInt(sensor_ids[i]);
+			var temp = current_temps[sensor_id];
+			var sensor;
+			for (var k = 0; k < sensors.length; k++) {
+				if (sensors[k].id == sensor_id) {
+					sensor = sensors[k];
+				}
+			}
+			html += '<span class="sensor-' + sensor.name + '">' + sensor.name + '<span class="temp" style="color:' + sensor.color + '">' + temp + '&deg;</span>';
+		}
+		$('.current').html(html);
 	}
 
 	ctx.Readings();
