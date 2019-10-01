@@ -146,7 +146,7 @@ var Readings = function() {
 	this.makeChart = function(datasets) {
 
 		Chart.defaults.global.elements.point.radius = 1;
-		Chart.defaults.global.elements.point.hitRadius = 4;
+		Chart.defaults.global.elements.point.hitRadius = 8;
 		Chart.defaults.global.elements.point.hoverRadius = 8;
 
 		var config = {
@@ -155,6 +155,9 @@ var Readings = function() {
 				datasets: datasets
 			},
 			options: {
+				hover: {
+					mode: 'new mode'
+				},
 				responsive: true,
 				maintainAspectRatio:false,
 				scales: {
