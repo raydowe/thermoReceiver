@@ -67,13 +67,13 @@ var Receiver = function() {
     }
 
     // heating
-    if (ctx.messageNeededForSensor(3, 5)) {
+    /*if (ctx.messageNeededForSensor(3, 5)) {
       var temperature = ctx.getMessage(3);
       if (temperature != null) {
         ctx.saveReading(3, temperature)
         sensor_values['3'] = undefined;
       }
-    }
+    }*/
 
   }
 
